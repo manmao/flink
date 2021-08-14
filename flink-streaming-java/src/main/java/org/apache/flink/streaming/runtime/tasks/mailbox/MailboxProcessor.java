@@ -189,6 +189,7 @@ public class MailboxProcessor implements Closeable {
             // 执行具体的Task任务，实际就是执行用户自定义Function
             processMail(localMailbox, false);
             if (isMailboxLoopRunning()) {
+                // mailboxDefaultAction 运行代码
                 mailboxDefaultAction.runDefaultAction(
                         defaultActionContext); // lock is acquired inside default action as needed
             }
