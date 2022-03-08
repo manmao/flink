@@ -27,6 +27,7 @@ public class Constants {
 
     public static final String CONFIG_FILE_LOGBACK_NAME = "logback-console.xml";
     public static final String CONFIG_FILE_LOG4J_NAME = "log4j-console.properties";
+    public static final String ENV_FLINK_LOG_DIR = "FLINK_LOG_DIR";
 
     public static final String MAIN_CONTAINER_NAME = "flink-main-container";
 
@@ -80,8 +81,6 @@ public class Constants {
     public static final String ENV_FLINK_POD_IP_ADDRESS = "_POD_IP_ADDRESS";
 
     public static final String POD_IP_FIELD_PATH = "status.podIP";
-
-    public static final String HEADLESS_SERVICE_CLUSTER_IP = "None";
 
     public static final int MAXIMUM_CHARACTERS_OF_CLUSTER_ID = 45;
 

@@ -34,6 +34,7 @@ import org.apache.flink.util.InstantiationUtil;
 import org.apache.flink.util.TestLogger;
 
 import org.apache.flink.shaded.curator4.org.apache.curator.framework.CuratorFramework;
+import org.apache.flink.shaded.guava30.com.google.common.collect.Iterables;
 import org.apache.flink.shaded.zookeeper3.org.apache.zookeeper.KeeperException;
 import org.apache.flink.shaded.zookeeper3.org.apache.zookeeper.data.Stat;
 
@@ -58,6 +59,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.spy;
@@ -79,9 +81,7 @@ public class ZooKeeperStateHandleStoreTest extends TestLogger {
 
     @AfterClass
     public static void tearDown() throws Exception {
-        if (ZOOKEEPER != null) {
-            ZOOKEEPER.shutdown();
-        }
+        ZOOKEEPER.shutdown();
     }
 
     @Before
@@ -147,8 +147,7 @@ public class ZooKeeperStateHandleStoreTest extends TestLogger {
         final TestingLongStateHandleHelper stateHandleProvider = new TestingLongStateHandleHelper();
 
         CuratorFramework client = spy(ZOOKEEPER.getClient());
-        when(client.inTransaction().create())
-                .thenThrow(new RuntimeException("Expected test Exception."));
+        when(client.inTransaction()).thenThrow(new RuntimeException("Expected test Exception."));
 
         ZooKeeperStateHandleStore<TestingLongStateHandleHelper.LongStateHandle> store =
                 new ZooKeeperStateHandleStore<>(client, stateHandleProvider);
@@ -173,10 +172,64 @@ public class ZooKeeperStateHandleStoreTest extends TestLogger {
     }
 
     @Test
-    public void testAddFailureHandlingForNodeExistsException() {
-        testFailingAddWithStateDiscardTriggeredFor(
-                new KeeperException.NodeExistsException(),
-                StateHandleStore.AlreadyExistException.class);
+    public void testAddAndLockExistingNode() throws Exception {
+        final TestingLongStateHandleHelper stateHandleProvider = new TestingLongStateHandleHelper();
+        final CuratorFramework client = ZOOKEEPER.getClient();
+        final ZooKeeperStateHandleStore<TestingLongStateHandleHelper.LongStateHandle> store =
+                new ZooKeeperStateHandleStore<>(client, stateHandleProvider);
+        final String path = "/test";
+        final long firstState = 1337L;
+        final long secondState = 7331L;
+        store.addAndLock(path, new TestingLongStateHandleHelper.LongStateHandle(firstState));
+        assertThrows(
+                StateHandleStore.AlreadyExistException.class,
+                () ->
+                        store.addAndLock(
+                                path,
+                                new TestingLongStateHandleHelper.LongStateHandle(secondState)));
+        // There should be only single state handle from the first successful attempt.
+        assertEquals(1, TestingLongStateHandleHelper.getGlobalStorageSize());
+        assertEquals(firstState, TestingLongStateHandleHelper.getStateHandleValueByIndex(0));
+        // No state should have been discarded.
+        assertEquals(0, TestingLongStateHandleHelper.getDiscardCallCountForStateHandleByIndex(0));
+        // Get state handle from zookeeper.
+        assertEquals(firstState, store.getAndLock(path).retrieveState().getValue());
+    }
+
+    /**
+     * Transactions are not idempotent in the Curator version we're currently using, therefore we
+     * may end up retrying the transaction that has already (eg. in case of connection failure).
+     * Retry of a successful transaction would result in {@link KeeperException.NodeExistsException}
+     * in this case.
+     *
+     * @see <a href="https://issues.apache.org/jira/browse/CURATOR-584">CURATOR-584</a>
+     */
+    @Test
+    public void testAddAndLockRetrySuccessfulTransaction() throws Exception {
+        final TestingLongStateHandleHelper stateHandleProvider = new TestingLongStateHandleHelper();
+        final CuratorFramework client = ZOOKEEPER.getClient();
+        final ZooKeeperStateHandleStore<TestingLongStateHandleHelper.LongStateHandle> store =
+                new ZooKeeperStateHandleStore<TestingLongStateHandleHelper.LongStateHandle>(
+                        client, stateHandleProvider) {
+
+                    @Override
+                    protected void writeStoreHandleTransactionally(
+                            String path, byte[] serializedStoreHandle) throws Exception {
+                        super.writeStoreHandleTransactionally(path, serializedStoreHandle);
+                        throw new KeeperException.NodeExistsException(
+                                "Committed transaction has been retried.");
+                    }
+                };
+        final String path = "/test";
+        final long firstState = 1337L;
+        store.addAndLock(path, new TestingLongStateHandleHelper.LongStateHandle(firstState));
+        // There should be only single state handle from the first successful attempt.
+        assertEquals(1, TestingLongStateHandleHelper.getGlobalStorageSize());
+        assertEquals(firstState, TestingLongStateHandleHelper.getStateHandleValueByIndex(0));
+        // No state should have been discarded.
+        assertEquals(0, TestingLongStateHandleHelper.getDiscardCallCountForStateHandleByIndex(0));
+        // Get state handle from zookeeper.
+        assertEquals(firstState, store.getAndLock(path).retrieveState().getValue());
     }
 
     @Test
@@ -541,6 +594,65 @@ public class ZooKeeperStateHandleStoreTest extends TestLogger {
             assertTrue(expected.remove(val.f0.retrieveState().getValue()));
         }
         assertEquals(0, expected.size());
+    }
+
+    @Test
+    public void testGetAllAndLockOnConcurrentDelete() throws Exception {
+        final TestingLongStateHandleHelper stateHandleProvider = new TestingLongStateHandleHelper();
+        final CuratorFramework client =
+                ZooKeeperUtils.useNamespaceAndEnsurePath(
+                        ZOOKEEPER.getClient(), "/testGetAllAndLockOnConcurrentDelete");
+
+        // this store simulates the ZooKeeper connection for maintaining the lifecycle (i.e.
+        // creating and deleting the nodes) of the StateHandles
+        final ZooKeeperStateHandleStore<TestingLongStateHandleHelper.LongStateHandle>
+                storeForCreationAndDeletion =
+                        new ZooKeeperStateHandleStore<>(client, stateHandleProvider);
+
+        // this store simulates a concurrent access to ZooKeeper
+        final ZooKeeperStateHandleStore<TestingLongStateHandleHelper.LongStateHandle>
+                storeForRetrieval = new ZooKeeperStateHandleStore<>(client, stateHandleProvider);
+
+        final String pathInZooKeeperPrefix = "/node";
+
+        final long stateForDeletion = 42L;
+        final String handlePathForDeletion = pathInZooKeeperPrefix + "-for-deletion";
+        storeForCreationAndDeletion.addAndLock(
+                handlePathForDeletion,
+                new TestingLongStateHandleHelper.LongStateHandle(stateForDeletion));
+
+        final long stateToKeep = stateForDeletion + 2;
+        storeForCreationAndDeletion.addAndLock(
+                pathInZooKeeperPrefix + "-keep",
+                new TestingLongStateHandleHelper.LongStateHandle(stateToKeep));
+
+        final List<
+                        Tuple2<
+                                RetrievableStateHandle<
+                                        TestingLongStateHandleHelper.LongStateHandle>,
+                                String>>
+                actuallyLockedHandles =
+                        storeForRetrieval.getAllAndLock(
+                                parentPath -> {
+                                    final List<String> childNodes =
+                                            client.getChildren().forPath(parentPath);
+                                    // the following block simulates the concurrent deletion of the
+                                    // child node after the node names are delivered to the
+                                    // storeForRetrieval causing a retry
+                                    if (storeForCreationAndDeletion
+                                            .exists(handlePathForDeletion)
+                                            .isExisting()) {
+                                        storeForCreationAndDeletion.releaseAndTryRemove(
+                                                handlePathForDeletion);
+                                    }
+
+                                    return childNodes;
+                                });
+
+        assertEquals(
+                "Only the StateHandle that was expected to be kept should be returned.",
+                stateToKeep,
+                Iterables.getOnlyElement(actuallyLockedHandles).f0.retrieveState().getValue());
     }
 
     /** Tests that the state is returned sorted. */
