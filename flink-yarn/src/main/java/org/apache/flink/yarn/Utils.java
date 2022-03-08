@@ -501,7 +501,7 @@ public final class Utils {
 
         boolean hasLogback = new File(workingDirectory, "logback.xml").exists();
         boolean hasLog4j = new File(workingDirectory, "log4j.properties").exists();
-
+        // 创建启动TaskManager Java命令
         String launchCommand =
                 BootstrapTools.getTaskManagerShellCommand(
                         flinkConfig,
@@ -519,7 +519,7 @@ public final class Utils {
         } else {
             log.info("Starting TaskManagers");
         }
-
+        // 构造 Yarn ContainerLaunchContext
         ContainerLaunchContext ctx = Records.newRecord(ContainerLaunchContext.class);
         ctx.setCommands(Collections.singletonList(launchCommand));
         ctx.setLocalResources(taskManagerLocalResources);

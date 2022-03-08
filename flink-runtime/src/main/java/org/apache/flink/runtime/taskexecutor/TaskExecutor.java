@@ -746,6 +746,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
             boolean taskAdded;
 
+            // 把 task 存放到 TaskManager 缓存
             try {
                 taskAdded = taskSlotTable.addTask(task);
             } catch (SlotNotFoundException | SlotNotActiveException e) {
@@ -753,6 +754,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             }
 
             if (taskAdded) {
+                //  启动task线程
                 task.startTaskThread();
 
                 setupResultPartitionBookkeeping(
@@ -949,9 +951,9 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             throw new IllegalArgumentException(
                     "Only synchronous savepoints are allowed to advance the watermark to MAX.");
         }
-
+        // 获取到TaskManager 上对应的 Tasks
         final Task task = taskSlotTable.getTask(executionAttemptID);
-
+        // 触发checkpoint
         if (task != null) {
             task.triggerCheckpointBarrier(checkpointId, checkpointTimestamp, checkpointOptions);
 

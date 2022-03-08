@@ -206,7 +206,7 @@ public class DefaultDispatcherResourceManagerComponentFactory
                             historyServerArchivist,
                             metricRegistry.getMetricQueryServiceGatewayRpcAddress(),
                             ioExecutor);
-
+            // 启动  Dispatcher，接收客户端请求
             log.debug("Starting Dispatcher.");
             dispatcherRunner =
                     dispatcherRunnerFactory.createDispatcherRunner(
@@ -217,6 +217,7 @@ public class DefaultDispatcherResourceManagerComponentFactory
                             rpcService,
                             partialDispatcherServices);
 
+            // 启动  ResourceManager，负责创建JobManager和TaskManager
             log.debug("Starting ResourceManagerService.");
             resourceManagerService.start();
 

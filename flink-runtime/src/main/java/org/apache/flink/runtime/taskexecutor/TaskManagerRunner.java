@@ -346,7 +346,7 @@ public class TaskManagerRunner implements FatalErrorHandler {
     }
 
     // --------------------------------------------------------------------------------------------
-    //  Static entry point
+    //  Static entry point TaskManager进程启动入口
     // --------------------------------------------------------------------------------------------
 
     public static void main(String[] args) throws Exception {
@@ -371,6 +371,16 @@ public class TaskManagerRunner implements FatalErrorHandler {
                 args, TaskManagerRunner.class.getSimpleName());
     }
 
+    /**
+     * 启动 TaskManager
+     *
+     * @param configuration 配置
+     * @param pluginManager 插件
+     *
+     * @return 返回值
+     *
+     * @throws Exception 异常信息
+     */
     public static int runTaskManager(Configuration configuration, PluginManager pluginManager)
             throws Exception {
         final TaskManagerRunner taskManagerRunner;
@@ -381,6 +391,9 @@ public class TaskManagerRunner implements FatalErrorHandler {
                             configuration,
                             pluginManager,
                             TaskManagerRunner::createTaskExecutorService);
+            // 启动RPC server 服务,rpcServer.start(),监听请求
+            // TaskExecutor.java  => TaskExecutorGateway.java
+            // 1.requestSlot  2.submitTask 3.triggerCheckpoint 4.cancelTask ... 等等操作
             taskManagerRunner.start();
         } catch (Exception exception) {
             throw new FlinkException("Failed to start the TaskManagerRunner.", exception);
@@ -422,7 +435,7 @@ public class TaskManagerRunner implements FatalErrorHandler {
         ClusterEntrypointUtils.configureUncaughtExceptionHandler(configuration);
         try {
             SecurityUtils.install(new SecurityConfiguration(configuration));
-
+            // 启动
             exitCode =
                     SecurityUtils.getInstalledContext()
                             .runSecured(() -> runTaskManager(configuration, pluginManager));

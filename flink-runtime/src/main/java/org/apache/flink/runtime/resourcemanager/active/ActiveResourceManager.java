@@ -267,6 +267,7 @@ public class ActiveResourceManager<WorkerType extends ResourceIDRetrievable>
     // ------------------------------------------------------------------------
 
     private void requestNewWorker(WorkerResourceSpec workerResourceSpec) {
+        // Flink TaskExecutor 资源描述
         final TaskExecutorProcessSpec taskExecutorProcessSpec =
                 TaskExecutorProcessUtils.processSpecFromWorkerResourceSpec(
                         flinkConfig, workerResourceSpec);

@@ -16,7 +16,7 @@
 #  See the License for the specific language governing permissions and
 # limitations under the License.
 ################################################################################
-
+# 启动 task manager 进程的脚本
 # Start/stop a Flink TaskManager.
 USAGE="Usage: taskmanager.sh (start|start-foreground|stop|stop-all)"
 

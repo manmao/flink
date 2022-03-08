@@ -56,7 +56,7 @@ public class YarnTaskExecutorRunner {
 
     /**
      * The entry point for the YARN task executor runner.
-     *
+     *  YARN TaskManager 启动入口
      * @param args The command line arguments.
      */
     public static void main(String[] args) {
@@ -89,7 +89,7 @@ public class YarnTaskExecutorRunner {
             LOG.error("YARN TaskManager initialization failed.", t);
             System.exit(INIT_ERROR_EXIT_CODE);
         }
-
+        // 启动 Flink TaskManager 进程
         TaskManagerRunner.runTaskManagerProcessSecurely(Preconditions.checkNotNull(configuration));
     }
 

@@ -118,6 +118,7 @@ public class TaskExecutorProcessSpecContainerResourcePriorityAdapter {
 
     private Optional<Resource> tryAdaptResource(
             final TaskExecutorProcessSpec taskExecutorProcessSpec) {
+        // CPU 内存
         final Resource resource =
                 Resource.newInstance(
                         taskExecutorProcessSpec.getTotalProcessMemorySize().getMebiBytes(),

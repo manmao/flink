@@ -169,7 +169,7 @@ public class KubernetesResourceManagerDriver
                 podName,
                 parameters.getTaskManagerMemoryMB(),
                 parameters.getTaskManagerCPU());
-
+        // flinkKubeClient 创建 K8s POD
         final CompletableFuture<Void> createPodFuture =
                 flinkKubeClient.createTaskManagerPod(taskManagerPod);
 

@@ -241,7 +241,7 @@ public class CliFrontend {
                 getEffectiveConfiguration(activeCommandLine, commandLine, programOptions, jobJars);
 
         LOG.debug("Effective executor configuration: {}", effectiveConfiguration);
-
+        // 执行jar包
         try (PackagedProgram program = getPackagedProgram(programOptions, effectiveConfiguration)) {
             executeProgram(effectiveConfiguration, program);
         }
@@ -1051,9 +1051,11 @@ public class CliFrontend {
             // do action
             switch (action) {
                 case ACTION_RUN:
+                    // 执行jar包的main方法
                     run(params);
                     return 0;
                 case ACTION_RUN_APPLICATION:
+                    // 运行application
                     runApplication(params);
                     return 0;
                 case ACTION_LIST:
@@ -1110,6 +1112,10 @@ public class CliFrontend {
     }
 
     /** Submits the job based on the arguments. */
+    /**
+     * 提交job程序
+     * @param args 参数
+     */
     public static void main(final String[] args) {
         EnvironmentInformation.logEnvironmentInfo(LOG, "Command Line Client", args);
 
