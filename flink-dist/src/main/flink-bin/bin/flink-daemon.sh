@@ -30,6 +30,7 @@ bin=`cd "$bin"; pwd`
 . "$bin"/config.sh
 
 case $DAEMON in
+    # TaskManager启动的class
     (taskexecutor)
         CLASS_TO_RUN=org.apache.flink.runtime.taskexecutor.TaskManagerRunner
     ;;

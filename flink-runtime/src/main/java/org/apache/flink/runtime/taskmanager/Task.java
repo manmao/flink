@@ -695,7 +695,7 @@ public class Task
 
             TaskKvStateRegistry kvStateRegistry =
                     kvStateService.createKvStateTaskRegistry(jobId, getJobVertexId());
-
+            // 运行时环境
             Environment env =
                     new RuntimeEnvironment(
                             jobId,
@@ -736,6 +736,7 @@ public class Task
             FlinkSecurityManager.monitorUserSystemExitForCurrentThread();
             try {
                 // now load and instantiate the task's invokable code
+                // 加载 算子 class
                 invokable =
                         loadAndInstantiateInvokable(
                                 userCodeClassLoader.asClassLoader(), nameOfInvokableClass, env);
@@ -762,7 +763,7 @@ public class Task
 
             // make sure the user code classloader is accessible thread-locally
             executingThread.setContextClassLoader(userCodeClassLoader.asClassLoader());
-
+            // 运行算子代码 TaskInvokable.invoke()=> StreamTask.invoke()
             restoreAndInvoke(invokable);
 
             // make sure, we enter the catch block if the task leaves the invoke() method due

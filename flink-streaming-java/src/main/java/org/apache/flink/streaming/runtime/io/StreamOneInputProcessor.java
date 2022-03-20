@@ -62,8 +62,8 @@ public final class StreamOneInputProcessor<IN> implements StreamInputProcessor {
 
     @Override
     public DataInputStatus processInput() throws Exception {
+        // 拉取网络输入数据，转化为输出数据
         DataInputStatus status = input.emitNext(output);
-
         if (status == DataInputStatus.END_OF_DATA) {
             endOfInputAware.endInput(input.getInputIndex() + 1);
             output = new FinishedDataOutput<>();

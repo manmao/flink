@@ -493,6 +493,7 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>>
      * @throws Exception on any problems in the action.
      */
     protected void processInput(MailboxDefaultAction.Controller controller) throws Exception {
+        // 处理输入的数据
         DataInputStatus status = inputProcessor.processInput();
         switch (status) {
             case MORE_AVAILABLE:
@@ -1325,7 +1326,7 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>>
                                 && this.finalCheckpointMinId == null) {
                             this.finalCheckpointMinId = checkpointMetaData.getCheckpointId();
                         }
-
+                        // 启动checkpoint
                         subtaskCheckpointCoordinator.checkpointState(
                                 checkpointMetaData,
                                 checkpointOptions,

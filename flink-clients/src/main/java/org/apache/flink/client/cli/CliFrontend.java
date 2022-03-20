@@ -1113,7 +1113,8 @@ public class CliFrontend {
 
     /** Submits the job based on the arguments. */
     /**
-     * 提交job程序
+     * 提交job程序，入口
+     *
      * @param args 参数
      */
     public static void main(final String[] args) {

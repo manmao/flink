@@ -229,7 +229,9 @@ public class OneInputStreamTask<IN, OUT> extends StreamTask<OUT, OneInputStreamO
         @Override
         public void emitRecord(StreamRecord<IN> record) throws Exception {
             numRecordsIn.inc();
+            // 设置 当前record的key
             operator.setKeyContextElement(record);
+            // 处理数据
             operator.processElement(record);
         }
 

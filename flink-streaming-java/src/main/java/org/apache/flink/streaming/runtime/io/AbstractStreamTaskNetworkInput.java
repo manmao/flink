@@ -131,6 +131,7 @@ public abstract class AbstractStreamTaskNetworkInput<
 
     private void processElement(StreamElement recordOrMark, DataOutput<T> output) throws Exception {
         if (recordOrMark.isRecord()) {
+            // 调用UserFunction 处理 record数据
             output.emitRecord(recordOrMark.asRecord());
         } else if (recordOrMark.isWatermark()) {
             statusWatermarkValve.inputWatermark(

@@ -202,6 +202,7 @@ public class RegularOperatorChain<OUT, OP extends StreamOperator<OUT>>
             ChannelStateWriter.ChannelStateWriteResult channelStateWriteResult,
             CheckpointStreamFactory storage)
             throws Exception {
+        // 执行 checkpoint
         OperatorSnapshotFutures snapshotInProgress =
                 checkpointStreamOperator(
                         op, checkpointMetaData, checkpointOptions, storage, isRunning);

@@ -596,12 +596,13 @@ class SubtaskCheckpointCoordinatorImpl implements SubtaskCheckpointCoordinator {
                 checkpointOptions.isUnalignedCheckpoint()
                         ? channelStateWriter.getAndRemoveWriteResult(checkpointId)
                         : ChannelStateWriteResult.EMPTY;
-
+        // Checkpoint存储
         CheckpointStreamFactory storage =
                 checkpointStorage.resolveCheckpointStorageLocation(
                         checkpointId, checkpointOptions.getTargetLocation());
 
         try {
+            // checkpoint
             operatorChain.snapshotState(
                     operatorSnapshotsInProgress,
                     checkpointMetaData,

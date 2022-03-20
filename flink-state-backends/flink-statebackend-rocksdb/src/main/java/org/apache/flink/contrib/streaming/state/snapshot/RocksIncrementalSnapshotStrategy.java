@@ -387,7 +387,7 @@ public class RocksIncrementalSnapshotStrategy<K>
                                     keyGroupRange,
                                     metaStateHandle.getTaskLocalSnapshot(),
                                     sstFiles.keySet());
-
+                    // snapshot checkpoint
                     snapshotResult =
                             SnapshotResult.withLocalState(
                                     jmIncrementalKeyedStateHandle, localDirKeyedStateHandle);

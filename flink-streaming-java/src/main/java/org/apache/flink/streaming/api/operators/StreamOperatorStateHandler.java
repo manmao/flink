@@ -166,7 +166,9 @@ public class StreamOperatorStateHandler {
         StateSnapshotContextSynchronousImpl snapshotContext =
                 new StateSnapshotContextSynchronousImpl(
                         checkpointId, timestamp, factory, keyGroupRange, closeableRegistry);
-
+        /*
+         * 执行算子的Checkpoint操作
+         */
         snapshotState(
                 streamOperator,
                 timeServiceManager,
