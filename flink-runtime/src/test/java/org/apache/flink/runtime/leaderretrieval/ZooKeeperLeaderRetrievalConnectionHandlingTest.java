@@ -127,6 +127,7 @@ public class ZooKeeperLeaderRetrievalConnectionHandlingTest extends TestLogger {
                     secondAddress.get(),
                     is(nullValue()));
         } finally {
+            queueLeaderElectionListener.clearUnhandledEvents();
             if (leaderRetrievalDriver != null) {
                 leaderRetrievalDriver.close();
             }
@@ -172,6 +173,7 @@ public class ZooKeeperLeaderRetrievalConnectionHandlingTest extends TestLogger {
                     secondAddress.get(),
                     is(nullValue()));
         } finally {
+            queueLeaderElectionListener.clearUnhandledEvents();
             if (leaderRetrievalDriver != null) {
                 leaderRetrievalDriver.close();
             }
@@ -214,6 +216,7 @@ public class ZooKeeperLeaderRetrievalConnectionHandlingTest extends TestLogger {
             // make sure that no new leader information is published
             assertThat(queueLeaderElectionListener.next(Duration.ofMillis(100L)), is(nullValue()));
         } finally {
+            queueLeaderElectionListener.clearUnhandledEvents();
             if (leaderRetrievalDriver != null) {
                 leaderRetrievalDriver.close();
             }
@@ -259,6 +262,7 @@ public class ZooKeeperLeaderRetrievalConnectionHandlingTest extends TestLogger {
                     queueLeaderElectionListener.next();
             assertThat(connectionReconnect.get(), is(leaderAddress));
         } finally {
+            queueLeaderElectionListener.clearUnhandledEvents();
             if (leaderRetrievalDriver != null) {
                 leaderRetrievalDriver.close();
             }
@@ -334,12 +338,14 @@ public class ZooKeeperLeaderRetrievalConnectionHandlingTest extends TestLogger {
             // check that we find the new leader information eventually
             CommonTestUtils.waitUntilCondition(
                     () -> {
-                        final CompletableFuture<String> afterConnectionReconnect =
-                                queueLeaderElectionListener.next();
-                        return afterConnectionReconnect.get().equals(newLeaderAddress);
+                        final String afterConnectionReconnect =
+                                queueLeaderElectionListener.next().get();
+                        return afterConnectionReconnect != null
+                                && afterConnectionReconnect.equals(newLeaderAddress);
                     },
                     Deadline.fromNow(Duration.ofSeconds(30L)));
         } finally {
+            queueLeaderElectionListener.clearUnhandledEvents();
             if (leaderRetrievalDriver != null) {
                 leaderRetrievalDriver.close();
             }
@@ -390,6 +396,17 @@ public class ZooKeeperLeaderRetrievalConnectionHandlingTest extends TestLogger {
                 }
             } catch (InterruptedException e) {
                 throw new IllegalStateException(e);
+            }
+        }
+
+        /**
+         * Clears any unhandled events. This is useful in cases where there was an unplanned
+         * reconnect after the test passed to prepare the shutdown. Outstanding events might cause
+         * an {@link InterruptedException} during shutdown, otherwise.
+         */
+        public void clearUnhandledEvents() {
+            while (!queue.isEmpty()) {
+                queue.poll();
             }
         }
     }
