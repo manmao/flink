@@ -181,6 +181,9 @@ public class StreamGraphGenerator {
                     TransformationTranslator<?, ? extends Transformation>>
             translatorMap;
 
+    /**
+     * transformation 对应的 trasnlator
+     */
     static {
         @SuppressWarnings("rawtypes")
         Map<Class<? extends Transformation>, TransformationTranslator<?, ? extends Transformation>>
@@ -545,7 +548,7 @@ public class StreamGraphGenerator {
         final TransformationTranslator<?, Transformation<?>> translator =
                 (TransformationTranslator<?, Transformation<?>>)
                         translatorMap.get(transform.getClass());
-
+        // 将StreamTransformation 转为 StreamTask
         Collection<Integer> transformedIds;
         if (translator != null) {
             transformedIds = translate(translator, transform);

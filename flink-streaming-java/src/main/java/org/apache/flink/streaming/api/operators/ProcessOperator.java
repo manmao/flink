@@ -63,6 +63,7 @@ public class ProcessOperator<IN, OUT>
     public void processElement(StreamRecord<IN> element) throws Exception {
         collector.setTimestamp(element);
         context.element = element;
+        // userFunction
         userFunction.processElement(element.getValue(), context, collector);
         context.element = null;
     }

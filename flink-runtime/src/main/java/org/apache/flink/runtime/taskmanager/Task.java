@@ -443,6 +443,7 @@ public class Task
         invokableHasBeenCanceled = new AtomicBoolean(false);
 
         // finally, create the executing thread, but do not start it
+        // 创建Task线程，执行run方法
         executingThread = new Thread(TASK_THREADS_GROUP, this, taskNameWithSubtask);
     }
 
@@ -618,6 +619,7 @@ public class Task
         // all resource acquisitions and registrations from here on
         // need to be undone in the end
         Map<String, Future<Path>> distributedCacheEntries = new HashMap<>();
+        // StreamTask实现
         TaskInvokable invokable = null;
 
         try {
@@ -736,7 +738,7 @@ public class Task
             FlinkSecurityManager.monitorUserSystemExitForCurrentThread();
             try {
                 // now load and instantiate the task's invokable code
-                // 加载 算子 class
+                // 加载 算子 class,封装了用户的 userFunction
                 invokable =
                         loadAndInstantiateInvokable(
                                 userCodeClassLoader.asClassLoader(), nameOfInvokableClass, env);
@@ -763,7 +765,9 @@ public class Task
 
             // make sure the user code classloader is accessible thread-locally
             executingThread.setContextClassLoader(userCodeClassLoader.asClassLoader());
-            // 运行算子代码 TaskInvokable.invoke()=> StreamTask.invoke()
+
+            // 运行算子代码 TaskInvokable.invoke() => StreamTask.invoke()
+            // 用户自定义的算子逻辑，将在这里面运行
             restoreAndInvoke(invokable);
 
             // make sure, we enter the catch block if the task leaves the invoke() method due
@@ -925,6 +929,7 @@ public class Task
 
     private void restoreAndInvoke(TaskInvokable finalInvokable) throws Exception {
         try {
+            // 恢复task任务
             runWithSystemExitMonitoring(finalInvokable::restore);
 
             if (!transitionState(ExecutionState.INITIALIZING, ExecutionState.RUNNING)) {
@@ -934,7 +939,7 @@ public class Task
             // notify everyone that we switched to running
             taskManagerActions.updateTaskExecutionState(
                     new TaskExecutionState(executionId, ExecutionState.RUNNING));
-
+            // 运行task
             runWithSystemExitMonitoring(finalInvokable::invoke);
         } catch (Throwable throwable) {
             try {

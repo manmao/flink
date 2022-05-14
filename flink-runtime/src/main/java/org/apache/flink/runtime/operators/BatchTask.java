@@ -82,6 +82,7 @@ import static java.util.Collections.emptyList;
 /**
  * The base class for all batch tasks. Encapsulated common behavior and implements the main
  * life-cycle of the user code.
+ *  用户定义 Function 的实现
  */
 public class BatchTask<S extends Function, OT> extends AbstractInvokable
         implements TaskContext<S, OT> {
@@ -99,6 +100,7 @@ public class BatchTask<S extends Function, OT> extends AbstractInvokable
     /**
      * The instantiated user code of this task's main operator (driver). May be null if the operator
      * has no udf.
+     *  此任务的主要算子（驱动程序）的实例化用户代码。如果算子没有udf，则可能为 null。
      */
     protected S stub;
 

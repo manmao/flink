@@ -370,6 +370,8 @@ public class StreamGraph implements Pipeline {
             TypeInformation<IN> inTypeInfo,
             TypeInformation<OUT> outTypeInfo,
             String operatorName) {
+        // invokableClass 声明 为 OneInputStreamTask
+        // TaskExecutor 执行 invokableClass
         Class<? extends TaskInvokable> invokableClass =
                 operatorFactory.isStreamSource()
                         ? SourceStreamTask.class
@@ -427,7 +429,7 @@ public class StreamGraph implements Pipeline {
             TypeInformation<IN2> in2TypeInfo,
             TypeInformation<OUT> outTypeInfo,
             String operatorName) {
-
+        // 指定InvokeClass
         Class<? extends TaskInvokable> vertexClass = TwoInputStreamTask.class;
 
         addNode(

@@ -41,7 +41,7 @@ import static java.util.Objects.requireNonNull;
  * This is used as the base class for operators that have a user-defined function. This class
  * handles the opening and closing of the user-defined functions, as part of the operator life
  * cycle.
- *
+ * UDF 算子，Filter,Map,Process,Async等等
  * @param <OUT> The output type of the operator
  * @param <F> The type of the user function
  */
@@ -52,6 +52,9 @@ public abstract class AbstractUdfStreamOperator<OUT, F extends Function>
     private static final long serialVersionUID = 1L;
 
     /** The user function. */
+    /**
+     * 用户自定的算子
+     */
     protected final F userFunction;
 
     public AbstractUdfStreamOperator(F userFunction) {
