@@ -31,6 +31,7 @@ import org.apache.flink.python.metric.FlinkMetricContainer;
 import org.apache.flink.runtime.state.KeyedStateBackend;
 import org.apache.flink.streaming.api.operators.AbstractStreamOperator;
 import org.apache.flink.streaming.api.operators.ChainingStrategy;
+import org.apache.flink.streaming.api.operators.InternalTimeServiceManager;
 import org.apache.flink.streaming.api.operators.sorted.state.BatchExecutionInternalTimeServiceManager;
 import org.apache.flink.streaming.api.operators.sorted.state.BatchExecutionKeyedStateBackend;
 import org.apache.flink.streaming.api.runners.python.beam.BeamPythonFunctionRunner;
@@ -218,21 +219,28 @@ public abstract class AbstractPythonFunctionOperator<OUT> extends AbstractStream
         // Approach 1) is the easiest and gives better latency, yet 2)
         // gives better throughput due to the bundle not getting cut on
         // every watermark. So we have implemented 2) below.
+
+        // advance the watermark and do not emit watermark to downstream operators
+        if (getTimeServiceManager().isPresent()) {
+            getTimeServiceManager().get().advanceWatermark(mark);
+        }
+
         if (mark.getTimestamp() == Long.MAX_VALUE) {
             invokeFinishBundle();
             processElementsOfCurrentKeyIfNeeded(null);
-            super.processWatermark(mark);
+            advanceWatermark(mark);
+            output.emitWatermark(mark);
         } else if (isBundleFinished()) {
-            // forward the watermark immediately if the bundle is already finished.
-            super.processWatermark(mark);
+            output.emitWatermark(mark);
         } else {
             // It is not safe to advance the output watermark yet, so add a hold on the current
             // output watermark.
             bundleFinishedCallback =
                     () -> {
                         try {
+                            advanceWatermark(mark);
                             // at this point the bundle is finished, allow the watermark to pass
-                            super.processWatermark(mark);
+                            output.emitWatermark(mark);
                         } catch (Exception e) {
                             throw new RuntimeException(
                                     "Failed to process watermark after finished bundle.", e);
@@ -250,7 +258,8 @@ public abstract class AbstractPythonFunctionOperator<OUT> extends AbstractStream
     private void processElementsOfCurrentKeyIfNeeded(Object newKey) {
         // process all the elements belonging to the current key when encountering a new key
         // for batch operator
-        if (inBatchExecutionMode(getKeyedStateBackend())
+        if (getKeyedStateStore() != null
+                && inBatchExecutionMode(getKeyedStateBackend())
                 && !Objects.equals(newKey, getCurrentKey())) {
             while (!isBundleFinished()) {
                 try {
@@ -312,6 +321,22 @@ public abstract class AbstractPythonFunctionOperator<OUT> extends AbstractStream
         Tuple2<byte[], Integer> resultTuple;
         while ((resultTuple = pythonFunctionRunner.pollResult()) != null && resultTuple.f1 != 0) {
             emitResult(resultTuple);
+        }
+    }
+
+    /**
+     * Advances the watermark of all managed timer services, potentially firing event time timers.
+     * It also ensures that the fired timers are processed in the Python user-defined functions.
+     */
+    private void advanceWatermark(Watermark watermark) throws Exception {
+        if (getTimeServiceManager().isPresent()) {
+            InternalTimeServiceManager<?> timeServiceManager = getTimeServiceManager().get();
+            timeServiceManager.advanceWatermark(watermark);
+
+            while (!isBundleFinished()) {
+                invokeFinishBundle();
+                timeServiceManager.advanceWatermark(watermark);
+            }
         }
     }
 
