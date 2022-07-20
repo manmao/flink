@@ -738,7 +738,7 @@ public class Task
             FlinkSecurityManager.monitorUserSystemExitForCurrentThread();
             try {
                 // now load and instantiate the task's invokable code
-                // 加载 算子 class,封装了用户的 userFunction
+                // 加载 算子 StreamTask,封装了用户的 userFunction
                 invokable =
                         loadAndInstantiateInvokable(
                                 userCodeClassLoader.asClassLoader(), nameOfInvokableClass, env);
