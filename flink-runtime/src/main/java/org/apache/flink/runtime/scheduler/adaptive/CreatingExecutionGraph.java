@@ -47,6 +47,9 @@ public class CreatingExecutionGraph implements State {
 
     private final Logger log;
 
+    /**
+     * 创建ExecutionGraph
+     */
     public CreatingExecutionGraph(
             Context context,
             CompletableFuture<ExecutionGraphWithVertexParallelism>
@@ -79,12 +82,14 @@ public class CreatingExecutionGraph implements State {
                     throwable);
             context.goToFinished(context.getArchivedExecutionGraph(JobStatus.FAILED, throwable));
         } else {
+            // 分配Slot，关联Slot和ExecutionGraph, Slot分配的核心逻辑
             final AssignmentResult result =
                     context.tryToAssignSlots(executionGraphWithVertexParallelism);
 
             if (result.isSuccess()) {
                 log.debug(
                         "Successfully reserved and assigned the required slots for the ExecutionGraph.");
+                // 调度 ExecutionGraph
                 context.goToExecuting(result.getExecutionGraph());
             } else {
                 log.debug(

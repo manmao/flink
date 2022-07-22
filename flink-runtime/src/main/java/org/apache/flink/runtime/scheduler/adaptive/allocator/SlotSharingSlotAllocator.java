@@ -91,6 +91,9 @@ public class SlotSharingSlotAllocator implements SlotAllocator {
         return maxParallelismForSlotSharingGroups;
     }
 
+    /**
+     * 给ExecutionVertex分配slot的逻辑
+     */
     @Override
     public Optional<VertexParallelismWithSlotSharing> determineParallelism(
             JobInformation jobInformation, Collection<? extends SlotInfo> freeSlots) {
@@ -102,12 +105,14 @@ public class SlotSharingSlotAllocator implements SlotAllocator {
             // => less slots than slot-sharing groups
             return Optional.empty();
         }
-
+        // 所有空闲的Slot
         final Iterator<? extends SlotInfo> slotIterator = freeSlots.iterator();
 
+        // ExecutionSlot分配
         final Collection<ExecutionSlotSharingGroupAndSlot> assignments = new ArrayList<>();
         final Map<JobVertexID, Integer> allVertexParallelism = new HashMap<>();
 
+        // 所有 SlotSharingGroup => ExecutionVertex
         for (SlotSharingGroup slotSharingGroup : jobInformation.getSlotSharingGroups()) {
             final List<JobInformation.VertexInformation> containedJobVertices =
                     slotSharingGroup.getJobVertexIds().stream()
@@ -117,13 +122,16 @@ public class SlotSharingSlotAllocator implements SlotAllocator {
             final Map<JobVertexID, Integer> vertexParallelism =
                     determineParallelism(containedJobVertices, slotsPerSlotSharingGroup);
 
+            // 按照subTaskIndex维度，将每个Slot下的ExecutionVertex放到一起 Map<Integer,Set<ExecutionVertex>>
             final Iterable<ExecutionSlotSharingGroup> sharedSlotToVertexAssignment =
                     createExecutionSlotSharingGroups(vertexParallelism);
-
+            /*
+             * 顺序分配 FreeSlot 给 ExecutionVertex => OperatorSubTask
+             */
             for (ExecutionSlotSharingGroup executionSlotSharingGroup :
                     sharedSlotToVertexAssignment) {
+                // 关联 Slot 和 ExecutionSlotSharingGroup
                 final SlotInfo slotInfo = slotIterator.next();
-
                 assignments.add(
                         new ExecutionSlotSharingGroupAndSlot(executionSlotSharingGroup, slotInfo));
             }
@@ -145,10 +153,13 @@ public class SlotSharingSlotAllocator implements SlotAllocator {
         return vertexParallelism;
     }
 
+    /**
+     * 按照subTaskIndex维度，将每个Slot下的ExecutionVertex放到一起 Map<Integer,Set<ExecutionVertex>>
+     */
     private static Iterable<ExecutionSlotSharingGroup> createExecutionSlotSharingGroups(
             Map<JobVertexID, Integer> containedJobVertices) {
         final Map<Integer, Set<ExecutionVertexID>> sharedSlotToVertexAssignment = new HashMap<>();
-
+        // 将JobVertex 转化为 ExecutionVertex
         for (Map.Entry<JobVertexID, Integer> jobVertex : containedJobVertices.entrySet()) {
             for (int i = 0; i < jobVertex.getValue(); i++) {
                 sharedSlotToVertexAssignment
@@ -174,14 +185,17 @@ public class SlotSharingSlotAllocator implements SlotAllocator {
         final VertexParallelismWithSlotSharing vertexParallelismWithSlotSharing =
                 (VertexParallelismWithSlotSharing) vertexParallelism;
 
+        // 收集Slot AllocationID
         final Collection<AllocationID> expectedSlots =
                 calculateExpectedSlots(vertexParallelismWithSlotSharing.getAssignments());
 
         if (areAllExpectedSlotsAvailableAndFree(expectedSlots)) {
             final Map<ExecutionVertexID, LogicalSlot> assignedSlots = new HashMap<>();
 
+            // 【Slot分配】分配 Slot
             for (ExecutionSlotSharingGroupAndSlot executionSlotSharingGroup :
                     vertexParallelismWithSlotSharing.getAssignments()) {
+                // 从 Slot Pool 中获取 Slot
                 final SharedSlot sharedSlot =
                         reserveSharedSlot(executionSlotSharingGroup.getSlotInfo());
 

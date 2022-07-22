@@ -91,6 +91,7 @@ public class DefaultDeclarativeSlotPool implements DeclarativeSlotPool {
     private final Time rpcTimeout;
 
     private final JobID jobId;
+    // TaskManager 注册的 slot pool
     private final AllocatedSlotPool slotPool;
 
     private final Map<AllocationID, ResourceProfile> slotToRequirementProfileMappings;

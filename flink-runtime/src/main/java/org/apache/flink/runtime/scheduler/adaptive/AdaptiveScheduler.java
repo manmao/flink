@@ -443,6 +443,7 @@ public class AdaptiveScheduler
         try {
             checkpointIdCounter.shutdown(terminalState);
         } catch (Exception e) {
+
             exception = ExceptionUtils.firstOrSuppressed(e, exception);
         }
 
@@ -885,6 +886,7 @@ public class AdaptiveScheduler
 
     @Override
     public void goToCreatingExecutionGraph() {
+        //创建 ExecutionGraph
         final CompletableFuture<CreatingExecutionGraph.ExecutionGraphWithVertexParallelism>
                 executionGraphWithAvailableResourcesFuture =
                         createExecutionGraphWithAvailableResourcesAsync();
@@ -900,6 +902,7 @@ public class AdaptiveScheduler
         final VertexParallelismStore adjustedParallelismStore;
 
         try {
+            // 并行度
             vertexParallelism = determineParallelism(slotAllocator);
             JobGraph adjustedJobGraph = jobInformation.copyJobGraph();
 
@@ -945,9 +948,10 @@ public class AdaptiveScheduler
 
         executionGraph.setInternalTaskFailuresListener(
                 new UpdateSchedulerNgOnInternalFailuresListener(this));
-
+        // Job 所有Operator的并行度总和
         final VertexParallelism vertexParallelism =
                 executionGraphWithVertexParallelism.getVertexParallelism();
+        // 分配Slot给 ExecutionVertex
         return slotAllocator
                 .tryReserveResources(vertexParallelism)
                 .map(
@@ -960,6 +964,7 @@ public class AdaptiveScheduler
     @Nonnull
     private ExecutionGraph assignSlotsToExecutionGraph(
             ExecutionGraph executionGraph, ReservedSlots reservedSlots) {
+        // 为每个Operator SubTask 绑定Slot资源
         for (ExecutionVertex executionVertex : executionGraph.getAllExecutionVertices()) {
             final LogicalSlot assignedSlot = reservedSlots.getSlotFor(executionVertex.getID());
             final CompletableFuture<Void> registrationFuture =

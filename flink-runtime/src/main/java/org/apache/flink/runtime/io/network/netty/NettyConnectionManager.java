@@ -31,7 +31,8 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
 
 public class NettyConnectionManager implements ConnectionManager {
 
-    private final NettyServer server;
+    private final NettyServer server
+            ;
 
     private final NettyClient client;
 
