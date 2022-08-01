@@ -135,6 +135,14 @@ public final class DefaultSlotPoolServiceSchedulerFactory
                 slotPoolServiceFactory, schedulerNGFactory);
     }
 
+    /**
+     * 【调度器】从配置文件中获取调度器类型
+     *
+     * @param configuration 配置
+     * @param jobType 任务类型
+     *
+     * @return 调度器构造工厂
+     */
     public static DefaultSlotPoolServiceSchedulerFactory fromConfiguration(
             Configuration configuration, JobType jobType) {
 

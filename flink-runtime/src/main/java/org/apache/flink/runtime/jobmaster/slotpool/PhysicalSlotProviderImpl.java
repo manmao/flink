@@ -58,7 +58,7 @@ public class PhysicalSlotProviderImpl implements PhysicalSlotProvider {
                 "Received slot request [{}] with resource requirements: {}",
                 slotRequestId,
                 resourceProfile);
-
+        // allocate slot
         Optional<PhysicalSlot> availablePhysicalSlot =
                 tryAllocateFromAvailable(slotRequestId, slotProfile);
 
@@ -80,11 +80,14 @@ public class PhysicalSlotProviderImpl implements PhysicalSlotProvider {
 
     private Optional<PhysicalSlot> tryAllocateFromAvailable(
             SlotRequestId slotRequestId, SlotProfile slotProfile) {
+
+        // 所有的TaskManager 可用的空闲 slot list
         Collection<SlotSelectionStrategy.SlotInfoAndResources> slotInfoList =
                 slotPool.getAvailableSlotsInformation().stream()
                         .map(SlotSelectionStrategy.SlotInfoAndResources::fromSingleSlot)
                         .collect(Collectors.toList());
 
+        // 使用 LocationPreferenceSlotSelectionStrategy 策略 从空闲Slot中计算出最合适的slot
         Optional<SlotSelectionStrategy.SlotInfoAndLocality> selectedAvailableSlot =
                 slotSelectionStrategy.selectBestSlotForProfile(slotInfoList, slotProfile);
 

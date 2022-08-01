@@ -285,6 +285,7 @@ public class DefaultDeclarativeSlotPool implements DeclarativeSlotPool {
     @Override
     public PhysicalSlot reserveFreeSlot(
             AllocationID allocationId, ResourceProfile requiredSlotProfile) {
+        // 通过allocationId获取到 实际的Slot
         final AllocatedSlot allocatedSlot = slotPool.reserveFreeSlot(allocationId);
 
         Preconditions.checkState(

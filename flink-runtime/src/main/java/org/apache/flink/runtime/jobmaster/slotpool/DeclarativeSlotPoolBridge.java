@@ -219,6 +219,7 @@ public class DeclarativeSlotPoolBridge extends DeclarativeSlotPoolService implem
         getDeclarativeSlotPool()
                 .increaseResourceRequirementsBy(
                         ResourceCounter.withResource(requiredSlotProfile, 1));
+
         final PhysicalSlot physicalSlot =
                 getDeclarativeSlotPool().reserveFreeSlot(allocationId, requiredSlotProfile);
         fulfilledRequests.put(slotRequestId, allocationId);

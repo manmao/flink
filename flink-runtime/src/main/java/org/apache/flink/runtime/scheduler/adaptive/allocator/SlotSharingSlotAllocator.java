@@ -98,6 +98,7 @@ public class SlotSharingSlotAllocator implements SlotAllocator {
     public Optional<VertexParallelismWithSlotSharing> determineParallelism(
             JobInformation jobInformation, Collection<? extends SlotInfo> freeSlots) {
         // TODO: This can waste slots if the max parallelism for slot sharing groups is not equal
+        // availableSlots
         final int slotsPerSlotSharingGroup =
                 freeSlots.size() / jobInformation.getSlotSharingGroups().size();
 

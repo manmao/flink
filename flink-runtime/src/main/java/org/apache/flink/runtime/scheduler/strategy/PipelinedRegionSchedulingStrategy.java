@@ -212,6 +212,7 @@ public class PipelinedRegionSchedulingStrategy implements SchedulingStrategy {
                         schedulingTopology, regions);
 
         final Map<ConsumedPartitionGroup, Boolean> consumableStatusCache = new HashMap<>();
+        // 调度所有Region
         for (SchedulingPipelinedRegion region : regionsSorted) {
             maybeScheduleRegion(region, consumableStatusCache);
         }

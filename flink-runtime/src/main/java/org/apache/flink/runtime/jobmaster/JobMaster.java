@@ -864,7 +864,7 @@ public class JobMaster extends PermanentlyFencedRpcEndpoint<JobMasterId>
 
     // -- job starting and stopping
     // -----------------------------------------------------------------
-
+    // 开始调度Execution
     private void startJobExecution() throws Exception {
         validateRunsInMainThread();
 

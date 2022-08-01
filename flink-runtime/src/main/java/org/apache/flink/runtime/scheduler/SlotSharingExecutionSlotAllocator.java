@@ -114,7 +114,7 @@ class SlotSharingExecutionSlotAllocator implements ExecutionSlotAllocator {
      *   <li>Generate {@link SlotExecutionVertexAssignment}s based on the logical slot futures and
      *       returns the results.
      * </ol>
-     *
+     * // slot分配代码
      * @param executionVertexIds Execution vertices to allocate slots for
      */
     @Override
@@ -123,11 +123,15 @@ class SlotSharingExecutionSlotAllocator implements ExecutionSlotAllocator {
 
         SharedSlotProfileRetriever sharedSlotProfileRetriever =
                 sharedSlotProfileRetrieverFactory.createFromBulk(new HashSet<>(executionVertexIds));
+        // ExecutionSlotSharingGroup 表示运行在同一个Slot上的所有 List<ExecutionVertex>,
+        // JobVertex 相同下标的subTask 放到同一个ExecutionSlotSharingGroup，每个 ExecutionSlotSharingGroup 放一个Slot
         Map<ExecutionSlotSharingGroup, List<ExecutionVertexID>> executionsByGroup =
                 executionVertexIds.stream()
                         .collect(
                                 Collectors.groupingBy(
                                         slotSharingStrategy::getExecutionSlotSharingGroup));
+
+        // 分配具体的 Slot 给每个 ExecutionSlotSharingGroup。
         Map<ExecutionSlotSharingGroup, SharedSlot> slots =
                 executionsByGroup.keySet().stream()
                         .map(group -> getOrAllocateSharedSlot(group, sharedSlotProfileRetriever))
@@ -135,6 +139,7 @@ class SlotSharingExecutionSlotAllocator implements ExecutionSlotAllocator {
                                 Collectors.toMap(
                                         SharedSlot::getExecutionSlotSharingGroup,
                                         Function.identity()));
+        // 分配 Slot 给 ExecutionVertex
         Map<ExecutionVertexID, SlotExecutionVertexAssignment> assignments =
                 allocateLogicalSlotsFromSharedSlots(slots, executionsByGroup);
 
@@ -169,6 +174,9 @@ class SlotSharingExecutionSlotAllocator implements ExecutionSlotAllocator {
         }
     }
 
+    /**
+     * 分配slot
+     */
     private static Map<ExecutionVertexID, SlotExecutionVertexAssignment>
             allocateLogicalSlotsFromSharedSlots(
                     Map<ExecutionSlotSharingGroup, SharedSlot> slots,
@@ -210,6 +218,7 @@ class SlotSharingExecutionSlotAllocator implements ExecutionSlotAllocator {
                                     physicalSlotRequestId,
                                     slotProfile,
                                     slotWillBeOccupiedIndefinitely);
+                    // allocate physical slot，申请Slot的核心逻辑，此处可以修改Slot的调度策略
                     CompletableFuture<PhysicalSlot> physicalSlotFuture =
                             slotProvider
                                     .allocatePhysicalSlot(physicalSlotRequest)

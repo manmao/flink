@@ -381,24 +381,29 @@ public class DefaultScheduler extends SchedulerBase implements SchedulerOperatio
     @Override
     public void allocateSlotsAndDeploy(
             final List<ExecutionVertexDeploymentOption> executionVertexDeploymentOptions) {
+        // 1、验证部署配置
         validateDeploymentOptions(executionVertexDeploymentOptions);
 
+        // 2、发布配置list->map
         final Map<ExecutionVertexID, ExecutionVertexDeploymentOption> deploymentOptionsByVertex =
                 groupDeploymentOptionsByVertexId(executionVertexDeploymentOptions);
-
+        // 3、获取所有需要部署的subtask id
         final List<ExecutionVertexID> verticesToDeploy =
                 executionVertexDeploymentOptions.stream()
                         .map(ExecutionVertexDeploymentOption::getExecutionVertexId)
                         .collect(Collectors.toList());
-
+        //4、累计subtask变动次数
         final Map<ExecutionVertexID, ExecutionVertexVersion> requiredVersionByVertex =
                 executionVertexVersioner.recordVertexModifications(verticesToDeploy);
 
+        // 5、变更subtask状态为SCHEDULED
         transitionToScheduled(verticesToDeploy);
 
+        // 6、向ResourceManager申请slot（异步操作）
         final List<SlotExecutionVertexAssignment> slotExecutionVertexAssignments =
                 allocateSlots(executionVertexDeploymentOptions);
 
+        // 7、slot申请操作完成后执行相应操作，成功则开始subtask部署逻辑
         final List<DeploymentHandle> deploymentHandles =
                 createDeploymentHandles(
                         requiredVersionByVertex,
