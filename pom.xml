@@ -70,7 +70,7 @@ under the License.
 		<module>flink-filesystems</module>
 		<module>flink-rpc</module>
 		<module>flink-runtime</module>
-		<!-- <module>flink-runtime-web</module> -->
+		<module>flink-runtime-web</module>
 		<module>flink-optimizer</module>
 		<module>flink-streaming-java</module>
 		<module>flink-streaming-scala</module>
